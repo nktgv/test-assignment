@@ -2,6 +2,7 @@ package configs
 
 import (
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 
@@ -17,12 +18,12 @@ type Config struct {
 }
 
 type PostgresConfig struct {
-	User     string `yaml:"user"     env-required:"true"`
-	Password string `yaml:"password" env-required:"true" env:"POSTGRES_PASSWORD"`
+	User     string `yaml:"user"     env-required:"true"  env:"POSTGRES_USER"`
+	Password string `yaml:"password" env-required:"true"  env:"POSTGRES_PASSWORD"`
 	Host     string `yaml:"host"     env-required:"true"`
 	Port     int    `yaml:"port"     env-required:"true"`
-	DB       string `yaml:"db"       env-required:"true"`
-	Email    string `yaml:"email"    env-required:"true"`
+	DB       string `yaml:"db"       env-required:"true"  env:"POSTGRES_DBNAME"`
+	Email    string `yaml:"email"    env-required:"false" env:"PGADMIN_EMAIL"`
 }
 
 func MustLoad() *Config {
@@ -47,14 +48,14 @@ func fetchConfigPath() string {
 
 	res = os.Getenv("CONFIG_PATH")
 
-	slog.Info("config path fetched %s", res)
+	slog.Info("config path fetched", res)
 
 	return res
 }
 
 func loadByPath(configPath string) *Config {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		slog.Error("config file does not exist: %s", slog.StringValue(configPath))
+		slog.Error("config file does not exist: %s", configPath)
 	}
 
 	var cfg Config
@@ -62,6 +63,16 @@ func loadByPath(configPath string) *Config {
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
 		slog.Error("cannot read config: %s", err)
 	}
+
+	user := os.Getenv("POSTGRES_USER")
+	pass := os.Getenv("POSTGRES_PASSWORD")
+	db := os.Getenv("POSTGRES_DBNAME")
+	email := os.Getenv("PGADMIN_EMAIL")
+	cfg.Postgres.User = user
+	cfg.Postgres.Password = pass
+	cfg.Postgres.DB = db
+	cfg.Postgres.Email = email
+	fmt.Println(cfg.Postgres)
 
 	return &cfg
 }

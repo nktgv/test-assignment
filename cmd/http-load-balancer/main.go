@@ -1,13 +1,14 @@
 package main
 
 import (
-	"http-load-balancer/configs"
-	"http-load-balancer/lib/logger/sl"
-	"http-load-balancer/storage/postgres"
 	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
+
+	"http-load-balancer/configs"
+	"http-load-balancer/lib/logger/sl"
+	"http-load-balancer/storage/postgres"
 )
 
 func main() {

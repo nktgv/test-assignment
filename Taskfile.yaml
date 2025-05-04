@@ -4,7 +4,7 @@ tasks:
   run:
     desc: Start project
     cmd:
-      go run ./cmd/http-load-balancer/main.go --config=./config/local.yaml
+      go run ./cmd/http-load-balancer/main.go --config=./config.yaml
 
   lint:
     desc: Lint all project

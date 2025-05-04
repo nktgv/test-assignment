@@ -2,9 +2,5 @@ env: local
 port: 4444
 hosts: ['10.211.55.8', '10.211.55.4']
 postgres:
-  user: "admin"
-  password: "admin"
   host: "localhost"
   port: 5432
-  db: "postgres"
-  email: "admin@example.com"

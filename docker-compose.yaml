@@ -9,8 +9,8 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./data:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d
+      - ./pgdata:/var/lib/postgresql/data
+      - ./init/0001_init_up.sql:/docker-entrypoint-initdb.d/1-init-up.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d postgres"]
       interval: 5s

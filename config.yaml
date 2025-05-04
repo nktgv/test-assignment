@@ -1,6 +1,12 @@
 env: local
 port: 8080
-hosts: ['10.211.55.8', '10.211.55.4']
+hosts:
+  - '10.211.55.8'
+  - '10.211.55.4'
+strategy: round-robbin
+user:
+  default_capacity: 100
+  default_RPS: 10
 postgres:
   host: "localhost"
   port: 5432

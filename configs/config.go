@@ -3,6 +3,7 @@ package configs
 import (
 	"flag"
 	"fmt"
+	"http-load-balancer/models"
 	"log/slog"
 	"os"
 
@@ -11,10 +12,12 @@ import (
 )
 
 type Config struct {
-	Env      string         `yaml:"env"      env-default:"dev"`
-	Port     int            `yaml:"port"                       env-required:"true"`
-	Postgres PostgresConfig `yaml:"postgres"                   env-required:"true"`
-	Hosts    []string       `yaml:"hosts"                      env-required:"true"`
+	Env      string           `yaml:"env"      env-default:"dev"`
+	Port     int              `yaml:"port"                       env-required:"true"`
+	Postgres PostgresConfig   `yaml:"postgres"                   env-required:"true"`
+	Backends []models.Backend `yaml:"hosts"                      env-required:"true"`
+	Strategy string           `yaml:"strategy" env-default:"round-robbin"`
+	User     User             `yaml:"user"`
 }
 
 type PostgresConfig struct {
@@ -24,6 +27,11 @@ type PostgresConfig struct {
 	Port     int    `yaml:"port"     env-required:"true"`
 	DB       string `yaml:"db"       env-required:"true"  env:"POSTGRES_DBNAME"`
 	Email    string `yaml:"email"    env-required:"false" env:"PGADMIN_EMAIL"`
+}
+
+type User struct {
+	DefaultCapacity int `yaml:"default_capacity" env-default:"100"`
+	DefaultRPS      int `yaml:"default_RPS" env-default:"10"`
 }
 
 func MustLoad() *Config {

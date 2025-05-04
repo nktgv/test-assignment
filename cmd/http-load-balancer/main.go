@@ -1,14 +1,23 @@
 package main
 
 import (
+	"context"
+	"errors"
+	"http-load-balancer/cmd/limiter"
+	"http-load-balancer/configs"
+	"http-load-balancer/healthcheck"
+	"http-load-balancer/lib/logger/sl"
+	"http-load-balancer/lib/strategy"
+	"http-load-balancer/repository"
+	"http-load-balancer/service"
+	"http-load-balancer/storage/postgres"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
-
-	"http-load-balancer/configs"
-	"http-load-balancer/lib/logger/sl"
-	"http-load-balancer/storage/postgres"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -19,31 +28,89 @@ func main() {
 	log.Info("load balancer starting", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
 
-	_, err := postgres.New(
+	pgStorage, err := postgres.New(
 		cfg.Postgres.User,
 		cfg.Postgres.Password,
 		cfg.Postgres.Host,
 		cfg.Postgres.Port,
 		cfg.Postgres.DB,
 	)
-
 	if err != nil {
 		log.Error("failed to init postgres", sl.Err(err))
 		os.Exit(1)
 	}
-
+	defer pgStorage.Close()
 	log.Info("postgres connection established", slog.Int("addr", cfg.Postgres.Port))
 
-	srv := &http.Server{
-		Addr: "127.0.0.1:" + strconv.Itoa(cfg.Port),
+	backendRepo := repository.NewBackendRepository(pgStorage.DB)
+	userRepo := repository.NewUserRepository(pgStorage.DB)
+
+	var balancerStrategy strategy.Strategy
+	switch cfg.Strategy {
+	case "round-robin":
+		balancerStrategy = strategy.NewRoundRobin()
+	case "least_connections":
+		backends, err := backendRepo.GetAll()
+		if err != nil {
+			log.Error("failed to get all backends", sl.Err(err))
+		}
+		balancerStrategy, err = strategy.NewLeastConnections(backends)
+		if err != nil {
+			log.Error("failed to get least connections", sl.Err(err))
+		}
+	case "random":
+		backends, err := backendRepo.GetAll()
+		if err != nil {
+			log.Error("failed to get all backends", sl.Err(err))
+		}
+		balancerStrategy = strategy.NewRandom(backends)
+	default:
+		log.Info("Unknown strategy:", slog.String("strategy", cfg.Strategy))
+		os.Exit(1)
 	}
 
-	log.Info("starting server", slog.String("address", "localhost:"+strconv.Itoa(cfg.Postgres.Port)))
+	limiter := limiter.NewTokenBucket(userRepo, cfg.User.DefaultCapacity, cfg.User.DefaultRPS)
 
-	err = srv.ListenAndServe()
-	if err != nil {
-		log.Error("failed to start server")
+	healthchecker := healthcheck.NewHealthChecker(backendRepo, time.Second*30)
+
+	balancer := service.NewBalancer(
+		balancerStrategy,
+		backendRepo,
+		healthchecker,
+		limiter,
+		log,
+	)
+
+	mux := http.NewServeMux()
+	mux.Handle("/", balancer)
+	mux.HandleFunc("/clients", clientHandler.CreateClient)
+	server := &http.Server{
+		Addr:    "127.0.0.1:" + strconv.Itoa(cfg.Port),
+		Handler: mux,
 	}
 
-	log.Error("server stopped")
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		balancer.StartHealthChecks()
+		log.Info("Server started on port %s", slog.Int("port", cfg.Port))
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.Error("Server error: %v", sl.Err(err))
+		}
+	}()
+
+	<-done
+	log.Info("Server is shutting down...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	balancer.StopHealthChecks()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Error("Server shutdown error: %v", sl.Err(err))
+	}
+
+	log.Info("server stopped")
 }

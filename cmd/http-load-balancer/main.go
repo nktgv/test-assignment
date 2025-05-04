@@ -11,11 +11,11 @@ import (
 	"syscall"
 
 	"http-load-balancer/balancer"
-	"http-load-balancer/cmd/limiter"
 	"http-load-balancer/configs"
 	"http-load-balancer/healthcheck"
 	"http-load-balancer/lib/logger/sl"
 	"http-load-balancer/lib/strategy"
+	"http-load-balancer/limiter"
 	"http-load-balancer/repository"
 	"http-load-balancer/storage/postgres"
 )
@@ -99,7 +99,7 @@ func main() {
 	<-done
 	log.Info("Server is shutting down...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), cfg.HealthCheckTimeout) // ???
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.HealthCheckTimeout)
 	defer cancel()
 
 	// balancer.StopHealthChecks()

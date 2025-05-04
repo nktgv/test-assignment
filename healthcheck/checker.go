@@ -1,11 +1,13 @@
 package healthcheck
 
 import (
-	"http-load-balancer/models"
-	"http-load-balancer/repository"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
+
+	"http-load-balancer/models"
+	"http-load-balancer/repository"
 )
 
 type HealthChecker struct {
@@ -65,9 +67,13 @@ func (hc *HealthChecker) checkAllBackends() {
 }
 
 func (hc *HealthChecker) checkBackend(backend models.Backend) {
+	url, err := url.Parse(backend.URL)
+	if err != nil {
+		return
+	}
 	req := &http.Request{
-		Method: "GET",
-		URL:    backend.Url,
+		Method: http.MethodGet,
+		URL:    url,
 	}
 	resp, err := hc.httpClient.Do(req)
 	isAlive := err == nil && resp.StatusCode == http.StatusOK

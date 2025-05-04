@@ -4,9 +4,9 @@ import (
 	"log/slog"
 	"net/http"
 
-	"http-load-balancer/cmd/limiter"
 	"http-load-balancer/healthcheck"
 	"http-load-balancer/lib/strategy"
+	"http-load-balancer/limiter"
 	"http-load-balancer/repository"
 )
 

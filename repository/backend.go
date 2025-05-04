@@ -61,7 +61,7 @@ func (r *backendRepository) Add(b *models.Backend) (*models.Backend, error) {
 			VALUES($1, $2, $3, $4) 
 			RETURNING id
 		`,
-		b.Url, b.IsAlive, b.CreatedAt, b.UpdatedAt,
+		b.URL, b.IsAlive, b.CreatedAt, b.UpdatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)

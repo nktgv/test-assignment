@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"http-load-balancer/models"
 
 	"github.com/jmoiron/sqlx"
+	"http-load-balancer/models"
 )
 
 type UserRepository interface {

@@ -2,22 +2,23 @@ package configs
 
 import (
 	"flag"
-	"fmt"
-	"http-load-balancer/models"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
+	"http-load-balancer/models"
 )
 
 type Config struct {
-	Env      string           `yaml:"env"      env-default:"dev"`
-	Port     int              `yaml:"port"                       env-required:"true"`
-	Postgres PostgresConfig   `yaml:"postgres"                   env-required:"true"`
-	Backends []models.Backend `yaml:"hosts"                      env-required:"true"`
-	Strategy string           `yaml:"strategy" env-default:"round-robbin"`
-	User     User             `yaml:"user"`
+	Env                string           `yaml:"env"                 env-default:"dev"`
+	Port               int              `yaml:"port"                                           env-required:"true"`
+	Postgres           PostgresConfig   `yaml:"postgres"                                       env-required:"true"`
+	Backends           []models.Backend `yaml:"hosts"                                          env-required:"true"`
+	HealthCheckTimeout time.Duration    `yaml:"healthcheck_timeout" env-default:"10s"`
+	Strategy           string           `yaml:"strategy"            env-default:"round-robbin"`
+	User               User             `yaml:"user"`
 }
 
 type PostgresConfig struct {
@@ -31,7 +32,7 @@ type PostgresConfig struct {
 
 type User struct {
 	DefaultCapacity int `yaml:"default_capacity" env-default:"100"`
-	DefaultRPS      int `yaml:"default_RPS" env-default:"10"`
+	DefaultRPS      int `yaml:"default_RPS"      env-default:"10"`
 }
 
 func MustLoad() *Config {
@@ -80,7 +81,6 @@ func loadByPath(configPath string) *Config {
 	cfg.Postgres.Password = pass
 	cfg.Postgres.DB = db
 	cfg.Postgres.Email = email
-	fmt.Println(cfg.Postgres)
 
 	return &cfg
 }

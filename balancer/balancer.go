@@ -1,11 +1,13 @@
-package service
+package balancer
 
 import (
+	"log/slog"
+	"net/http"
+
+	"http-load-balancer/cmd/limiter"
 	"http-load-balancer/healthcheck"
 	"http-load-balancer/lib/strategy"
 	"http-load-balancer/repository"
-	"log/slog"
-	"net/http"
 )
 
 type Balancer struct {
@@ -16,7 +18,13 @@ type Balancer struct {
 	log           *slog.Logger
 }
 
-func NewBalancer(strategy strategy.Strategy, backendRepo repository.BackendRepository, healthChecker *healthcheck.HealthChecker, limiter *limiter.TockenBucket, log *slog.Logger) *Balancer {
+func NewBalancer(
+	strategy strategy.Strategy,
+	backendRepo repository.BackendRepository,
+	healthChecker *healthcheck.HealthChecker,
+	limiter *limiter.TokenBucket,
+	log *slog.Logger,
+) *Balancer {
 	return &Balancer{
 		strategy,
 		backendRepo,

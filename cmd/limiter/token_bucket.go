@@ -1,8 +1,9 @@
 package limiter
 
 import (
-	"http-load-balancer/repository"
 	"sync"
+
+	"http-load-balancer/repository"
 )
 
 type TokenBucket struct {

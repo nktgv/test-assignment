@@ -2,9 +2,9 @@ package strategy
 
 import (
 	"errors"
-	"fmt"
-	"http-load-balancer/models"
 	"sync"
+
+	"http-load-balancer/models"
 )
 
 type LeastConnections struct {
@@ -39,7 +39,7 @@ func (lc *LeastConnections) NextBackend(backends []models.Backend) (models.Backe
 	lc.mu.Unlock()
 
 	if !found {
-		return models.Backend{}, fmt.Errorf("no alive backends")
+		return models.Backend{}, errors.New("no alive backends")
 	}
 	return selected, nil
 }

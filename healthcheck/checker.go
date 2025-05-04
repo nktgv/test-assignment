@@ -20,7 +20,7 @@ func NewHealthChecker(repo repository.BackendRepository, interval time.Duration)
 	return &HealthChecker{
 		repo: repo,
 		httpClient: &http.Client{
-			Timeout: time.Second * 5,
+			Timeout: time.Second,
 		},
 		interval: interval,
 		stopChan: make(chan struct{}),
@@ -58,19 +58,26 @@ func (hc *HealthChecker) checkAllBackends() {
 	if err != nil {
 		return
 	}
-	
+
 	for _, b := range backends {
 		go hc.checkBackend(b)
 	}
 }
 
 func (hc *HealthChecker) checkBackend(backend models.Backend) {
-	resp, err := hc.httpClient.Get(backend.Url)
+	req := &http.Request{
+		Method: "GET",
+		URL:    backend.Url,
+	}
+	resp, err := hc.httpClient.Do(req)
 	isAlive := err == nil && resp.StatusCode == http.StatusOK
 	if resp != nil {
 		resp.Body.Close()
 	}
 	if isAlive != backend.IsAlive {
-		hc.repo.SetIsAlive(backend.ID, true)
+		_, err := hc.repo.SetIsAlive(backend.ID, true)
+		if err != nil {
+			return
+		}
 	}
 }

@@ -3,21 +3,21 @@ package main
 import (
 	"context"
 	"errors"
-	"http-load-balancer/cmd/limiter"
-	"http-load-balancer/configs"
-	"http-load-balancer/healthcheck"
-	"http-load-balancer/lib/logger/sl"
-	"http-load-balancer/lib/strategy"
-	"http-load-balancer/repository"
-	"http-load-balancer/service"
-	"http-load-balancer/storage/postgres"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
-	"time"
+
+	"http-load-balancer/balancer"
+	"http-load-balancer/cmd/limiter"
+	"http-load-balancer/configs"
+	"http-load-balancer/healthcheck"
+	"http-load-balancer/lib/logger/sl"
+	"http-load-balancer/lib/strategy"
+	"http-load-balancer/repository"
+	"http-load-balancer/storage/postgres"
 )
 
 func main() {
@@ -59,11 +59,7 @@ func main() {
 			log.Error("failed to get least connections", sl.Err(err))
 		}
 	case "random":
-		backends, err := backendRepo.GetAll()
-		if err != nil {
-			log.Error("failed to get all backends", sl.Err(err))
-		}
-		balancerStrategy = strategy.NewRandom(backends)
+		balancerStrategy = strategy.NewRandom()
 	default:
 		log.Info("Unknown strategy:", slog.String("strategy", cfg.Strategy))
 		os.Exit(1)
@@ -71,9 +67,9 @@ func main() {
 
 	limiter := limiter.NewTokenBucket(userRepo, cfg.User.DefaultCapacity, cfg.User.DefaultRPS)
 
-	healthchecker := healthcheck.NewHealthChecker(backendRepo, time.Second*30)
+	healthchecker := healthcheck.NewHealthChecker(backendRepo, cfg.HealthCheckTimeout)
 
-	balancer := service.NewBalancer(
+	balancer := balancer.NewBalancer(
 		balancerStrategy,
 		backendRepo,
 		healthchecker,
@@ -83,7 +79,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle("/", balancer)
-	mux.HandleFunc("/clients", clientHandler.CreateClient)
+	// mux.HandleFunc("/clients", clientHandler.CreateClient)
 	server := &http.Server{
 		Addr:    "127.0.0.1:" + strconv.Itoa(cfg.Port),
 		Handler: mux,
@@ -93,7 +89,7 @@ func main() {
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		balancer.StartHealthChecks()
+		// balancer.StartHealthChecks()
 		log.Info("Server started on port %s", slog.Int("port", cfg.Port))
 		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Error("Server error: %v", sl.Err(err))
@@ -103,10 +99,10 @@ func main() {
 	<-done
 	log.Info("Server is shutting down...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), cfg.HealthCheckTimeout) // ???
 	defer cancel()
 
-	balancer.StopHealthChecks()
+	// balancer.StopHealthChecks()
 
 	if err := server.Shutdown(ctx); err != nil {
 		log.Error("Server shutdown error: %v", sl.Err(err))

@@ -1,8 +1,9 @@
 package strategy
 
 import (
-	"http-load-balancer/models"
 	"sync/atomic"
+
+	"http-load-balancer/models"
 )
 
 type RoundRobin struct {

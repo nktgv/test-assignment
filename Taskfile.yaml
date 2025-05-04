@@ -2,5 +2,46 @@ version: "3"
 
 tasks:
   run:
+    desc: Start project
     cmd:
       go run ./cmd/http-load-balancer/main.go --config=./config/local.yaml
+
+  lint:
+    desc: Lint all project
+    cmd:
+      golangci-lint run ./...
+
+  lint:fix:
+    desc: Lint & Fix all project
+    cmd:
+      golangci-lint run --fix
+
+  lint:format:
+    desc: Format with fmt
+    cmd:
+      golangci-lint fmt ./...
+
+  up:
+    desc: Start PostgreSQL and pgAdmin
+    cmd:
+      docker-compose up -d
+
+  down:
+    desc: Stop and remove containers
+    cmd:
+      docker-compose down
+
+  db-logs:
+    desc: View PostgreSQL logs
+    cmd:
+      docker-compose logs -f postgres
+
+  backup:
+    desc: Create database backup
+    cmd:
+      docker-compose exec postgres pg_dump -U admin -d postgres > backup_$(date +%Y-%m-%d_%H-%M-%S).sql
+
+  restore:
+    desc: Restore database from backup
+    cmd:
+      docker-compose exec -T postgres psql -U admin -d postgres < {{.CLI_ARGS}}

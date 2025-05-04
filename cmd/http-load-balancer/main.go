@@ -34,7 +34,7 @@ func main() {
 	log.Info("postgres connection established", slog.Int("addr", cfg.Postgres.Port))
 
 	srv := &http.Server{
-		Addr: "localhost:" + strconv.Itoa(cfg.Postgres.Port),
+		Addr: "127.0.0.1:" + strconv.Itoa(cfg.Port),
 	}
 
 	log.Info("starting server", slog.String("address", "localhost:"+strconv.Itoa(cfg.Postgres.Port)))

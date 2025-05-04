@@ -1,9 +1,10 @@
 package configs
 
 import (
-	"http-load-balancer/lib/logger/slogpretty"
 	"log/slog"
 	"os"
+
+	"http-load-balancer/lib/logger/slogpretty"
 )
 
 const (

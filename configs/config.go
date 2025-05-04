@@ -2,7 +2,7 @@ package configs
 
 import (
 	"flag"
-	"log"
+	"log/slog"
 	"os"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -10,18 +10,19 @@ import (
 )
 
 type Config struct {
-	Env      string         `yaml:"env" env-default:"dev"`
-	Port     int            `yaml:"port" env-required:"true"`
-	Postgres PostgresConfig `yaml:"postgres" env-required:"true"`
-	Hosts    []string       `yaml:"hosts" env-required:"true"`
+	Env      string         `yaml:"env"      env-default:"dev"`
+	Port     int            `yaml:"port"                       env-required:"true"`
+	Postgres PostgresConfig `yaml:"postgres"                   env-required:"true"`
+	Hosts    []string       `yaml:"hosts"                      env-required:"true"`
 }
 
 type PostgresConfig struct {
-	User     string `yaml:"user" env-required:"true"`
+	User     string `yaml:"user"     env-required:"true"`
 	Password string `yaml:"password" env-required:"true" env:"POSTGRES_PASSWORD"`
-	Host     string `yaml:"host" env-required:"true"`
-	Port     int    `yaml:"port" env-required:"true"`
-	DB       string `yaml:"db" env-required:"true"`
+	Host     string `yaml:"host"     env-required:"true"`
+	Port     int    `yaml:"port"     env-required:"true"`
+	DB       string `yaml:"db"       env-required:"true"`
+	Email    string `yaml:"email"    env-required:"true"`
 }
 
 func MustLoad() *Config {
@@ -41,25 +42,25 @@ func fetchConfigPath() string {
 
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatal("Error loading .env file")
+		slog.Error("Error loading .env file", err)
 	}
 
 	res = os.Getenv("CONFIG_PATH")
 
-	log.Printf("config path fetched %s", res)
+	slog.Info("config path fetched %s", res)
 
 	return res
 }
 
 func loadByPath(configPath string) *Config {
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		log.Fatalf("config file does not exist: %s", configPath)
+		slog.Error("config file does not exist: %s", slog.StringValue(configPath))
 	}
 
 	var cfg Config
 
 	if err := cleanenv.ReadConfig(configPath, &cfg); err != nil {
-		log.Fatalf("cannot read config: %s", err)
+		slog.Error("cannot read config: %s", err)
 	}
 
 	return &cfg

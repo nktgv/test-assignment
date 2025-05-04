@@ -1,5 +1,5 @@
 env: local
-port: 4444
+port: 8080
 hosts: ['10.211.55.8', '10.211.55.4']
 postgres:
   host: "localhost"

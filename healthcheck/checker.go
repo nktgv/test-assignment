@@ -92,14 +92,14 @@ func (hc *HealthChecker) checkBackend(backend models.Backend) {
 	if err != nil {
 		return
 	}
-	
+
 	resp, err := hc.httpClient.Do(req)
 	if err != nil {
 		return
 	}
 	defer resp.Body.Close()
 
-	isAlive := err == nil && resp.StatusCode == http.StatusOK
+	isAlive := resp.StatusCode == http.StatusOK
 
 	if _, err = hc.repo.SetIsAlive(backend.ID, isAlive); err != nil {
 		return

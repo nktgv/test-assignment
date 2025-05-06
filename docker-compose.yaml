@@ -1,4 +1,45 @@
+networks:
+  perf-net:
+    enable_ipv6: false
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.enable_icc: "true"
+      com.docker.network.bridge.host_binding_ipv4: "0.0.0.0"
+
 services:
+  loadbalancer:
+    build: .
+    ports:
+      - "8090:8090"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - perf-net
+    volumes:
+      - ./.env:/app/.env
+      - ./config.yaml:/app/config.yaml
+    healthcheck:
+      test: [ "CMD", "wget", "-o-", "http://localhost:8090" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 2G
+    sysctls:
+      - net.core.somaxconn=65535
+      - net.ipv4.tcp_max_syn_backlog=65535
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 65535
+        hard: 65535
+    restart: unless-stopped
+
   postgres:
     image: postgres:15-alpine
     container_name: postgres_db
@@ -8,9 +49,11 @@ services:
       POSTGRES_DB: ${POSTGRES_DBNAME}
     ports:
       - "5432:5432"
+    networks:
+      - perf-net
     volumes:
-      - ./data:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d
+      - ./pgdata:/var/lib/postgresql/data
+      - ./init/0001_init.sql:/docker-entrypoint-initdb.d/1-init-up.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d postgres"]
       interval: 5s
@@ -29,4 +72,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - perf-net
     restart: unless-stopped
+

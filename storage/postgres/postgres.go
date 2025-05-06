@@ -9,7 +9,7 @@ import (
 )
 
 type Storage struct {
-	db *sqlx.DB
+	DB *sqlx.DB
 }
 
 func New(username string, password string, host string, port int, dbName string) (*Storage, error) {
@@ -19,7 +19,7 @@ func New(username string, password string, host string, port int, dbName string)
 		"password=%s dbname=%s sslmode=disable",
 		host, port, username, password, dbName)
 
-	db, err := sqlx.Open("postgres", psqlInfo)
+	db, err := sqlx.Connect("postgres", psqlInfo)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
@@ -29,9 +29,9 @@ func New(username string, password string, host string, port int, dbName string)
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}
 
-	return &Storage{db: db}, nil
+	return &Storage{DB: db}, nil
 }
 
 func (s *Storage) Close() error {
-	return s.db.Close()
+	return s.DB.Close()
 }

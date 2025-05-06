@@ -91,6 +91,13 @@ rate_limiting:
   default_rate: 10
 ```
 
+## Нагрузочное тестирование Apache Bench
+
+Базовый тест:
+```bash
+ab -n 5000 -c 1000 http://localhost:8090/
+```
+
 ## Работа с Taskfile
 
 Основные команды:

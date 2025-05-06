@@ -110,10 +110,10 @@ func main() {
 	server := &http.Server{
 		Addr:           cfg.Addr + ":" + strconv.Itoa(cfg.Port),
 		Handler:        mux,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
+		ReadTimeout:    60 * time.Second,
+		WriteTimeout:   60 * time.Second,
 		MaxHeaderBytes: 1 << 20,
-		IdleTimeout:    30 * time.Second,
+		IdleTimeout:    180 * time.Second,
 	}
 
 	done := make(chan os.Signal, 1)

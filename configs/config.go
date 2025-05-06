@@ -14,6 +14,7 @@ import (
 
 type Config struct {
 	Env                string           `yaml:"env"                 env-default:"dev"`
+	Addr               string           `yaml:"host"                env-default:"localhost"`
 	Port               int              `yaml:"port"                                           env-required:"true"`
 	Postgres           PostgresConfig   `yaml:"postgres"                                       env-required:"true"`
 	Backends           []models.Backend `yaml:"hosts"                                          env-required:"true"`

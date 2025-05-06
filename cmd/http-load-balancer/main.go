@@ -108,7 +108,7 @@ func main() {
 	mux.HandleFunc("PATCH /clients/{client_id}", clientHandler.UpdateClientParams)
 
 	server := &http.Server{
-		Addr:           "0.0.0.0:" + strconv.Itoa(cfg.Port),
+		Addr:           cfg.Addr + ":" + strconv.Itoa(cfg.Port),
 		Handler:        mux,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,

@@ -132,7 +132,7 @@ func (b *Balancer) proxyRequest(w http.ResponseWriter, req *http.Request, backen
 	}
 
 	proxy := httputil.NewSingleHostReverseProxy(target)
-	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+	proxy.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, err error) {
 		b.log.Error("proxy error",
 			sl.Err(err),
 			slog.String("backend", backend.URL))

@@ -1,12 +1,14 @@
 package healthcheck
 
 import (
-	"http-load-balancer/models"
-	"http-load-balancer/repository"
+	"context"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
+
+	"http-load-balancer/models"
+	"http-load-balancer/repository"
 )
 
 type HealthChecker struct {
@@ -88,20 +90,20 @@ func (hc *HealthChecker) checkBackend(backend models.Backend) {
 		return
 	}
 
-	req, err := http.NewRequest(http.MethodGet, url.String(), nil)
+	ctx := context.Background()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url.String(), nil)
 	if err != nil {
 		return
 	}
 
-	var isAlive bool
+	isAlive := true
 	resp, err := hc.httpClient.Do(req)
 	if err != nil {
 		isAlive = false
-		return
 	}
 	defer resp.Body.Close()
 
-	isAlive = resp.StatusCode == http.StatusOK
+	isAlive = isAlive && resp.StatusCode == http.StatusOK
 
 	if _, err = hc.repo.SetIsAlive(backend.ID, isAlive); err != nil {
 		return

@@ -3,10 +3,11 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"http-load-balancer/models"
-	"http-load-balancer/repository"
 	"net/http"
 	"strconv"
+
+	"http-load-balancer/models"
+	"http-load-balancer/repository"
 )
 
 type ClientHandler struct {

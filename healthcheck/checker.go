@@ -1,12 +1,13 @@
 package healthcheck
 
 import (
-	"http-load-balancer/models"
-	"http-load-balancer/repository"
 	"net/http"
 	"net/url"
 	"sync"
 	"time"
+
+	"http-load-balancer/models"
+	"http-load-balancer/repository"
 )
 
 type HealthChecker struct {

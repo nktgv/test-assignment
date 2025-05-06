@@ -2,14 +2,14 @@ package configs
 
 import (
 	"flag"
-	"http-load-balancer/lib/logger/sl"
-	"http-load-balancer/models"
 	"log/slog"
 	"os"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/joho/godotenv"
+	"http-load-balancer/lib/logger/sl"
+	"http-load-balancer/models"
 )
 
 type Config struct {

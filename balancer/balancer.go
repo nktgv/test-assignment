@@ -3,16 +3,17 @@ package balancer
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+
 	"http-load-balancer/healthcheck"
 	"http-load-balancer/lib/logger/sl"
 	"http-load-balancer/lib/strategy"
 	"http-load-balancer/limiter"
 	"http-load-balancer/models"
 	"http-load-balancer/repository"
-	"log/slog"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
 )
 
 type Balancer struct {

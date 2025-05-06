@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"http-load-balancer/models"
 
 	"github.com/jmoiron/sqlx"
+	"http-load-balancer/models"
 )
 
 type UserRepository interface {
@@ -92,7 +92,13 @@ func (r *userRepository) Delete(id uint64) error {
 func (r *userRepository) Update(user *models.User) error {
 	const op = "userRepository.Update"
 
-	res, err := r.db.Exec(`UPDATE user SET capacity = $1, rate_per_sec = $2, tokens = $3 WHERE id = $4`, user.Capacity, user.RatePerSec, user.Tokens, user.ID)
+	res, err := r.db.Exec(
+		`UPDATE user SET capacity = $1, rate_per_sec = $2, tokens = $3 WHERE id = $4`,
+		user.Capacity,
+		user.RatePerSec,
+		user.Tokens,
+		user.ID,
+	)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

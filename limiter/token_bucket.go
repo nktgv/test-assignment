@@ -3,9 +3,10 @@ package limiter
 import (
 	"errors"
 	"fmt"
-	"http-load-balancer/repository"
 	"sync"
 	"time"
+
+	"http-load-balancer/repository"
 )
 
 type TokenBucket struct {

@@ -3,6 +3,14 @@ package main
 import (
 	"context"
 	"errors"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
+
 	"http-load-balancer/api"
 	"http-load-balancer/balancer"
 	"http-load-balancer/configs"
@@ -12,13 +20,6 @@ import (
 	"http-load-balancer/limiter"
 	"http-load-balancer/repository"
 	"http-load-balancer/storage/postgres"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
-	"time"
 )
 
 func main() {

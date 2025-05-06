@@ -3,13 +3,7 @@ package main
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
-
+	"http-load-balancer/api"
 	"http-load-balancer/balancer"
 	"http-load-balancer/configs"
 	"http-load-balancer/healthcheck"
@@ -18,6 +12,13 @@ import (
 	"http-load-balancer/limiter"
 	"http-load-balancer/repository"
 	"http-load-balancer/storage/postgres"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
 )
 
 func main() {
@@ -45,6 +46,26 @@ func main() {
 	backendRepo := repository.NewBackendRepository(pgStorage.DB)
 	userRepo := repository.NewUserRepository(pgStorage.DB)
 
+	backends, err := backendRepo.GetAll()
+	if err != nil {
+		log.Error("failed to get all backends", sl.Err(err))
+		os.Exit(1)
+	}
+	if len(backends) == 0 {
+		for i := range len(cfg.Backends) {
+			cfg.Backends[i].IsAlive = true
+			backend, err := backendRepo.Add(&cfg.Backends[i])
+			log.Debug("backend added", slog.Any("backend", backend))
+			if err != nil {
+				log.Error("failed to add backend", sl.Err(err))
+				os.Exit(1)
+			}
+			cfg.Backends[i].ID = backend.ID
+			cfg.Backends[i].CreatedAt = backend.CreatedAt
+			cfg.Backends[i].UpdatedAt = backend.UpdatedAt
+		}
+	}
+
 	var balancerStrategy strategy.Strategy
 	switch cfg.Strategy {
 	case "round-robin":
@@ -64,6 +85,7 @@ func main() {
 		log.Info("Unknown strategy:", slog.String("strategy", cfg.Strategy))
 		os.Exit(1)
 	}
+	log.Info("balancer strategy", slog.String("strategy", cfg.Strategy))
 
 	limiter := limiter.NewTokenBucket(userRepo, cfg.User.DefaultCapacity, cfg.User.DefaultRPS)
 
@@ -77,24 +99,41 @@ func main() {
 		log,
 	)
 
+	clientHandler := api.NewClientHandler(userRepo)
 	mux := http.NewServeMux()
 	mux.Handle("/", balancer)
-	// mux.HandleFunc("/clients", clientHandler.CreateClient)
+	mux.HandleFunc("POST /clients", clientHandler.CreateClient)
+	mux.HandleFunc("DELETE /clients/{client_id}", clientHandler.DeleteClient)
+	mux.HandleFunc("PATCH /clients/{client_id}", clientHandler.UpdateClientParams)
+
 	server := &http.Server{
-		Addr:    "127.0.0.1:" + strconv.Itoa(cfg.Port),
-		Handler: mux,
+		Addr:           "0.0.0.0:" + strconv.Itoa(cfg.Port),
+		Handler:        mux,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+		IdleTimeout:    30 * time.Second,
 	}
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
+	var serverErrChan = make(chan error)
+	log.Info("Server started on port", slog.Int("port", cfg.Port))
 	go func() {
-		// balancer.StartHealthChecks()
-		log.Info("Server started on port %s", slog.Int("port", cfg.Port))
-		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("Server error: %v", sl.Err(err))
+		balancer.StartHealthChecks()
+		if err := server.ListenAndServe(); err != nil || !errors.Is(err, http.ErrServerClosed) {
+			serverErrChan <- err
 		}
 	}()
+
+	select {
+	case err := <-serverErrChan:
+		log.Error("Server error", sl.Err(err))
+		os.Exit(1)
+	case <-time.After(1 * time.Second):
+		log.Info("Server is running")
+	}
 
 	<-done
 	log.Info("Server is shutting down...")
@@ -102,10 +141,10 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.HealthCheckTimeout)
 	defer cancel()
 
-	// balancer.StopHealthChecks()
+	balancer.StopHealthChecks()
 
 	if err := server.Shutdown(ctx); err != nil {
-		log.Error("Server shutdown error: %v", sl.Err(err))
+		log.Error("Server shutdown error", sl.Err(err))
 	}
 
 	log.Info("server stopped")

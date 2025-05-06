@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS backend (
     id SERIAL PRIMARY KEY,
     url VARCHAR(255) NOT NULL UNIQUE,
     is_alive BOOLEAN DEFAULT TRUE,
-    --weight INTEGER DEFAULT 1,
+    active_conns INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -19,4 +19,4 @@ CREATE TABLE IF NOT EXISTS client (
 
 -- Индексы
 CREATE INDEX IF NOT EXISTS idx_backends_active ON backend(is_alive);
-CREATE INDEX IF NOT EXISTS idx_backends_url ON backend(url);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_backends_url ON backend(url);

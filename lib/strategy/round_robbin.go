@@ -27,7 +27,7 @@ func (rr *RoundRobin) NextBackend(backends []models.Backend) (models.Backend, er
 	}
 
 	if len(activeBackends) == 0 {
-		return models.Backend{}, nil
+		return models.Backend{}, ErrNoAliveBackends
 	}
 
 	idx := atomic.AddUint64(&rr.counter, 1) % uint64(len(activeBackends))

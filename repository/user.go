@@ -4,15 +4,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"http-load-balancer/models"
 
 	"github.com/jmoiron/sqlx"
-	"http-load-balancer/models"
 )
 
 type UserRepository interface {
 	GetAll() ([]models.User, error)
 	GetByID(id uint64) (models.User, error)
 	Create(user *models.User) (*models.User, error)
+	Delete(id uint64) error
+	Update(user *models.User) error
 	UpdateTokens(id uint64, tokens int) (bool, error)
 	UpdateCapacity(id uint64, capacity int) (bool, error)
 	UpdateRatePerSec(id uint64, ratePerSecond int) (bool, error)
@@ -44,7 +46,7 @@ func (r *userRepository) GetByID(id uint64) (models.User, error) {
 	err := r.db.Get(&user, `SELECT * FROM user WHERE id = $1`, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return models.User{}, fmt.Errorf("%s: %w", op, err)
+			return models.User{}, fmt.Errorf("%s: %w", op, ErrUserNotFound)
 		}
 		return models.User{}, fmt.Errorf("%s: %w", op, err)
 	}
@@ -68,6 +70,40 @@ func (r *userRepository) Create(user *models.User) (*models.User, error) {
 	}
 	user.ID = userID
 	return user, nil
+}
+
+func (r *userRepository) Delete(id uint64) error {
+	const op = "userRepository.Delete"
+
+	res, err := r.db.Exec(`DELETE FROM user WHERE id = $1`, id)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("%s: %w", op, ErrUserNotFound)
+	}
+	return nil
+}
+
+func (r *userRepository) Update(user *models.User) error {
+	const op = "userRepository.Update"
+
+	res, err := r.db.Exec(`UPDATE user SET capacity = $1, rate_per_sec = $2, tokens = $3 WHERE id = $4`, user.Capacity, user.RatePerSec, user.Tokens, user.ID)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("%s: %w", op, ErrUserNotFound)
+	}
+	return nil
 }
 
 func (r *userRepository) UpdateTokens(id uint64, tokens int) (bool, error) {

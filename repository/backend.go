@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"http-load-balancer/models"
 
 	"github.com/jmoiron/sqlx"
-	"http-load-balancer/models"
 )
 
 type BackendRepository interface {
@@ -36,14 +36,14 @@ func (r *backendRepository) GetAll() ([]models.Backend, error) {
 }
 
 func (r *backendRepository) GetActive() ([]models.Backend, error) {
-	const op = "BackendRepository.GetAll"
+	const op = "BackendRepository.GetActive"
 
 	backends := make([]models.Backend, 0)
 	query := `SELECT * FROM backend WHERE is_alive=$1`
-	err := r.db.Get(&backends, query, "true")
+	err := r.db.Select(&backends, query, "true")
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("%s: %w", op, err)
+			return nil, ErrNoActiveBackends
 		}
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

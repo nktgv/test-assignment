@@ -39,7 +39,7 @@ func (lc *LeastConnections) NextBackend(backends []models.Backend) (models.Backe
 	lc.mu.Unlock()
 
 	if !found {
-		return models.Backend{}, errors.New("no alive backends")
+		return models.Backend{}, ErrNoAliveBackends
 	}
 	return selected, nil
 }

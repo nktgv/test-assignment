@@ -22,14 +22,22 @@ tasks:
       golangci-lint fmt ./...
 
   up:
-    desc: Start PostgreSQL and pgAdmin
+    desc: Start PostgreSQL, pgAdmin and main service
     cmd:
       docker-compose up -d
 
   down:
     desc: Stop and remove containers
     cmd:
-      docker-compose down
+      docker-compose down -v
+
+  restart:
+    desc: Stop and remove containers. Start PostgreSQL and main service
+    cmds:
+      - docker-compose down -v --remove-orphans
+      - docker system prune -a -f
+      - rm -rf pgdata
+      - task: up
 
   db-logs:
     desc: View PostgreSQL logs

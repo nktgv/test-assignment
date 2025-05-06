@@ -3,7 +3,6 @@ package strategy
 import (
 	"crypto/rand"
 	"encoding/binary"
-	"errors"
 
 	"http-load-balancer/models"
 )
@@ -29,7 +28,7 @@ func (r *Random) NextBackend(backends []models.Backend) (models.Backend, error) 
 		return models.Backend{}, err
 	}
 	if len(aliveBackends) == 0 {
-		return models.Backend{}, errors.New("no alive backends")
+		return models.Backend{}, ErrNoAliveBackends
 	}
 
 	selected := aliveBackends[int(n)%len(aliveBackends)]

@@ -1,13 +1,27 @@
 env: local
-port: 8080
+port: 8090
 hosts:
-  - '10.211.55.8'
-  - '10.211.55.4'
+  - id: 1
+    url: 'host.docker.internal:8081'
+  - id: 2
+    url: 'host.docker.internal:8082'
+  - id: 3
+    url: 'host.docker.internal:8083'
+  - id: 4
+    url: 'host.docker.internal:8084'
+  - id: 5
+    url: 'host.docker.internal:8085'
+  - id: 6
+    url: 'host.docker.internal:8086'
+  - id: 7
+    url: 'host.docker.internal:8087'
+  - id: 8
+    url: 'host.docker.internal:8089'
 healthcheck_timeout: 30s
-strategy: round-robbin
+strategy: round-robin
 user:
   default_capacity: 100
   default_RPS: 10
 postgres:
-  host: "localhost"
+  host: postgres_db
   port: 5432

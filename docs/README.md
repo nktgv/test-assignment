@@ -65,6 +65,7 @@ task restart
 
 ```yaml
 env: dev
+host: 0.0.0.0 # или localhost для запуска локально
 port: 8090
 strategy: round-robin  # или least_connections, random
 
